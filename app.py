@@ -325,7 +325,7 @@ def main():
         <div class="hero-eyebrow">AI · NLP · Deep Learning</div>
         <div class="hero-title">Cine<span>Scope</span></div>
         <div class="hero-subtitle">
-            Paste any movie review and our LSTM model instantly reads the emotion behind the words.
+            Paste any Movie detailed review  and our LSTM model instantly reads the emotion behind the words.
         </div>
         <div class="hero-divider"></div>
     </div>
