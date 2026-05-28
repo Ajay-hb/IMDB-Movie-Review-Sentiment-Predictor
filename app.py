@@ -52,7 +52,7 @@ def load_sentiment_model(path: str = MODEL_PATH):
             f"Model file not found at {path}. Please place the saved Keras weights file in the same folder."
         )
     model = build_default_model(VOCAB_SIZE)
-    model.load_weights(path)
+    model=load_weights(path)
     return model
 
 
