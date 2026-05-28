@@ -49,7 +49,7 @@ The application is built with:
 ## 🔗 Deploy Link
 
 ```bash
-https://your-streamlit-app-link.streamlit.app
+https://ajay-hb-imdb-movie-review-sentiment-predictor.streamlit.app
 ```
 
 </div>
