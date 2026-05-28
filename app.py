@@ -35,4 +35,61 @@ def preprocess_review(review: str, word_index: dict, maxlen: int, vocab_size: in
 
 def build_default_model(vocab_size: int, embedding_dim: int = 32, rnn_units: int = 32):
     model = Sequential()
-    model.add(Embedding(input_dim=
+    model.add(Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=MAX_LENGTH))
+    model.add(LSTM(rnn_units))
+    model.add(Dense(1, activation="sigmoid"))
+    model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
+    return model
+
+@st.cache_resource
+def load_sentiment_model(path: str = MODEL_PATH):
+    if os.path.exists(path):
+        try:
+            return load_model(path)
+        except Exception:
+            pass  # Fall through to retrain
+
+    st.info("No pre-trained model found. Training now (~2-3 minutes)...")
+    (X_train, y_train), _ = imdb.load_data(num_words=VOCAB_SIZE)
+    X_train = pad_sequences(X_train, maxlen=MAX_LENGTH)
+    model = build_default_model(VOCAB_SIZE)
+    progress_bar = st.progress(0, text="Training in progress...")
+    EPOCHS = 3
+    for epoch in range(EPOCHS):
+        model.fit(X_train, y_train, epochs=1, batch_size=128, verbose=0)
+        progress_bar.progress(int((epoch + 1) / EPOCHS * 100), text=f"Training epoch {epoch + 1}/{EPOCHS}...")
+    progress_bar.empty()
+    model.save(path)
+    st.success("Model trained and saved!")
+    return model
+
+def main():
+    st.set_page_config(page_title="IMDB Sentiment Predictor", layout="wide")
+    st.title("🎬 IMDB Movie Review Sentiment Predictor")
+    st.markdown("Enter a movie review below and the app will predict whether it is **positive** or **negative**.")
+
+    try:
+        model = load_sentiment_model()
+    except Exception as exc:
+        st.error(f"Failed to load or train model: {exc}")
+        return
+
+    word_index = load_word_index()
+    review_text = st.text_area("Enter your movie review:", height=180)
+
+    if st.button("Predict Sentiment"):
+        if not review_text.strip():
+            st.warning("Please enter a review before clicking Predict Sentiment.")
+        else:
+            with st.spinner("Analysing..."):
+                input_sequence = preprocess_review(review_text, word_index, MAX_LENGTH, VOCAB_SIZE)
+                prediction = float(model.predict(input_sequence, verbose=0)[0][0])
+            sentiment = "Positive 😊" if prediction >= 0.5 else "Negative 😞"
+            confidence = prediction if prediction >= 0.5 else 1 - prediction
+            col1, col2 = st.columns(2)
+            col1.metric("Sentiment", sentiment)
+            col2.metric("Confidence", f"{confidence:.1%}")
+            st.progress(prediction, text=f"Positive probability: {prediction:.4f}")
+
+if __name__ == "__main__":
+    main()
